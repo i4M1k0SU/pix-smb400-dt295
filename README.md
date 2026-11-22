@@ -12,21 +12,26 @@ PIX-DT295 は [smpn2/pix-dt295](https://github.com/smpn2/pix-dt295) の `dt295` 
 
 - PIX-SMB400 に [nanamitm/pix-smb400-mirakurun](https://github.com/nanamitm/pix-smb400-mirakurun) の導入が済んでいること
 - USB ハブ経由で PIX-DT295 が接続されていること
-  - USB ブート用の USB メモリも接続する必要があるため
+  - ブート用の USB メモリも接続する必要があるため
 
 ## 導入
 
 ### 1. ファイルを配置する
 
+#### ファイル
 - `/data/local/tmp/dt295/`
-  - `dt295`: ARMv7 版の実行ファイル
+  - `dt295`
+    - [smpn2/pix-dt295](https://github.com/smpn2/pix-dt295)
+    - Linux ARMv7 版を使う
   - `start_dt295.sh`
   - `dt295-tuner.sh`
   - `dt295.conf`
   - `90-dt295.sh`
 
+#### 配置後に実行
+
 ```bash
-ln -s /data/local/tmp/dt295/90-dt295.sh /data/local/tmp/mirakurun-root/etcprofile.d/90-dt295.sh
+ln -s /data/local/tmp/dt295/90-dt295.sh /data/local/tmp/mirakurun-root/etc/profile.d/90-dt295.sh
 chmod 755 /data/local/tmp/dt295/dt295 /data/local/tmp/dt295/start_dt295.sh data/local/tmp/dt295/dt295-tuner.sh
 ```
 
@@ -39,7 +44,9 @@ chmod 755 /data/local/tmp/dt295/dt295 /data/local/tmp/dt295/start_dt295.sh data/
 /data/local/tmp/dt295/dt295 list
 ```
 
-### 3. Mirakurun の `tuners.yml` の本体のチューナー (`SMB400`) の後ろに、個体ごとに追加し Mirakurun を再起動する
+### 3. `/data/local/tmp/mirakurun/config/tuners.yml` を編集
+
+本体のチューナー (`SMB400`) の後ろに、個体ごとに追加し Mirakurun を再起動する
 
 ```yaml
 - name: DT295-AB12345678
