@@ -1,7 +1,13 @@
 #!/bin/sh
-# dt295-tuner.sh -- Mirakurun tuner command for a PIX-DT295 on the PIX-SMB400.
+# dt295-tuner.sh -- Mirakurun tuner command for a PIX-DT295(W) / PIX-DT195(W) unit
+# on the PIX-SMB400.
 #
-# Usage (tuners.yml):  /data/local/tmp/dt295/dt295-tuner.sh <serial> <channel>
+# Usage (tuners.yml):  /data/local/tmp/dt295/dt295-tuner.sh <serial> [<tuner>] <channel>
+#
+# <tuner>: 1 (without it), or 2 for the second tuner of a unit with two, which streams
+# beside its first (one tuners.yml entry per tuner). A unit with one tuner has tuner 1 only.
+# Mirakurun puts the channel in as one argument, always the last, so the number of
+# arguments tells whether a tuner is given.
 #
 # Takes the channel names of the SMB400's own tuner (smb400-tuner.sh), so one
 # channels.yml serves both tuners, and runs `dt295 tune` (Mirakurun runs it inside
@@ -10,7 +16,7 @@
 #   BS:  BSxx_y    transponder xx, TS -> --sat <IF Hz> --tsid <hex>, the TSID from
 #                  bs_tsid.conf (the SMB400's table, "<channel> <decimal TSID>")
 #   CS:  NDxx      transponder xx     -> --sat <IF Hz> (one TS per transponder)
-# BS4K (ISDB-S3) is not something the DT295 receives.
+# BS4K (ISDB-S3) is not something the PIX-DT295(W) / PIX-DT195(W) receive.
 #
 # The unit runs in raw-TS mode (raw-ts = true in dt295.conf): no firmware, every
 # service of the TS, still scrambled. The SMB400's own descrambler b21dec (MULTI2
@@ -21,10 +27,14 @@
 # Mirakurun starts this command in a process group of its own and stops it by
 # signalling the group, which reaches both ends of the pipe.
 
-SERIAL=$1
-CHANNEL=$2
-DT295=/data/local/tmp/dt295/dt295
-CONF=/data/local/tmp/dt295/dt295.conf
+USAGE="usage: $0 <serial> [<tuner>] <channel>"
+case $# in
+2) SERIAL=$1 TUNER=1 CHANNEL=$2 ;;
+3) SERIAL=$1 TUNER=$2 CHANNEL=$3 ;;
+*) SERIAL= ;;
+esac
+DT295=${DT295:-/data/local/tmp/dt295/dt295}
+CONF=${DT295_CONF:-/data/local/tmp/dt295/dt295.conf}
 B21DEC=${B21DEC:-/data/local/tmp/b21dec}
 BS_TSID_CONF=${BS_TSID_CONF:-/data/local/tmp/bs_tsid.conf}
 
@@ -33,11 +43,15 @@ fail() {
     exit 1
 }
 
-[ -n "$SERIAL" ] && [ -n "$CHANNEL" ] || fail "usage: $0 <serial> <channel>"
+[ -n "$SERIAL" ] && [ -n "$CHANNEL" ] || fail "$USAGE"
+case "$TUNER" in
+1 | 2) ;;
+*) fail "unknown tuner '$TUNER' (1, or 2 on a unit with two tuners)" ;;
+esac
 
 case "$CHANNEL" in
 4[0-9][0-9][0-9][0-9])
-    fail "BS4K channel '$CHANNEL': the PIX-DT295 does not receive ISDB-S3"
+    fail "BS4K channel '$CHANNEL': the PIX-DT295(W) / PIX-DT195(W) do not receive ISDB-S3"
     ;;
 [0-9] | [0-9][0-9])
     CH=$((10#$CHANNEL))
@@ -71,6 +85,7 @@ ND[0-9][0-9])
     fail "unknown channel format '$CHANNEL'"
     ;;
 esac
+set -- --tuner "$TUNER" "$@"
 
 # In the background, so that a signal to this shell alone (timeout(1), a test by
 # hand) also ends the pipe: the trap stops b21dec, and dt295 tune ends when its

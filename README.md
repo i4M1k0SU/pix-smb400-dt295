@@ -1,17 +1,18 @@
 # PIX-SMB400-DT295
 
-PIX-SMB400 の Mirakurun に、PIX-DT295 をチューナーとして追加するスクリプト
+PIX-SMB400 の Mirakurun に、PIX-DT295(W) / PIX-DT195(W) をチューナーとして追加するスクリプト
 
-PIX-SMB400 (Android 8、Linux 4.9 の armv7l) の USB ポートに PIX-DT295 を接続し、本体で動く Mirakurun (BS4K 版) で本体のチューナーと並べて使用する。
-PIX-DT295 は [smpn2/pix-dt295](https://github.com/smpn2/pix-dt295) の `dt295` で動作させる。
+PIX-SMB400 (Android 8、Linux 4.9 の armv7l) の USB ポートに PIX-DT295(W) / PIX-DT195(W) を接続し、本体で動く Mirakurun (BS4K 版) で本体のチューナーと並べて使用する。
+PIX-DT295(W) / PIX-DT195(W) は [smpn2/pix-dt295](https://github.com/smpn2/pix-dt295) の `dt295` で動作させる。
+PIX-DT295W / PIX-DT195W  は 2 チューナーを、Mirakurun のチューナー 2 つとして使用できる。
 
 個体は raw-TS モードで動かし、スクランブルの解除は本体のチューナーと同じく本体の `b21dec` (本体の ACAS チップで MULTI2 の鍵を得る) が行う。
-そのため、ファームウェアも、PIX-DT295 の B-CAS カードも不要。
+そのため、純正ファームウェアも、B-CAS カードの挿入も不要。
 
 ## 前提
 
 - PIX-SMB400 に [nanamitm/pix-smb400-mirakurun](https://github.com/nanamitm/pix-smb400-mirakurun) の導入が済んでいること
-- USB ハブ経由で PIX-DT295 が接続されていること
+- USB ハブ経由で PIX-DT295(W) / PIX-DT195(W) が接続されていること
   - ブート用の USB メモリも接続する必要があるため
 
 ## 導入
@@ -58,10 +59,31 @@ chmod 755 /data/local/tmp/dt295/dt295 /data/local/tmp/dt295/start_dt295.sh data/
   isDisabled: false
 ```
 
+PIX-DT295W / PIX-DT195W は、チューナーごとに 1 つ追加する (シリアル番号と `<channel>` の間に、チューナーの番号 `1` / `2` を記述する)
+
+```yaml
+- name: DT195W-CD23456789-1
+  types:
+    - GR
+    - BS
+    - CS
+  command: /data/local/tmp/dt295/dt295-tuner.sh CD23456789 1 <channel>
+  isDisabled: false
+- name: DT195W-CD23456789-2
+  types:
+    - GR
+    - BS
+    - CS
+  command: /data/local/tmp/dt295/dt295-tuner.sh CD23456789 2 <channel>
+  isDisabled: false
+```
+
 - nanamitm/pix-smb400-mirakurun リポジトリの `make push-config` は `tuners.yml` を上書きするので、必要があればそちらの `config/tuners.yml` にも追加しておく
 - `dt295-tuner.sh` は本体のチューナー (`smb400-tuner.sh`) と同じチャンネル名を受け取り、`dt295 tune` の引数に変換するので、`channels.yml` はそのまま使用できる
   - 地デジ `13`-`62` は UHF の周波数、BS `BSxx_y` は IF と TSID、CS `NDxx` は IF に変換する
   - BS の TSID は本体と同じ表 (`/data/local/tmp/bs_tsid.conf`) から引く
+- チューナーの番号を省略すると `1` としてみなす (`dt295-tuner.sh <シリアル番号> [<チューナーの番号>] <チャンネル>`)
+  - 1 チューナーモデルは未指定でよい
 - 出力は復号済みの TS で、全サービスを含む
 - チューナーに `decoder` は設定しない
 
